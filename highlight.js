@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	window.addEventListener('mouseup', handleWindowMouseUp);
 	window.addEventListener('dblclick', handleDoubleClick); 
+	window.addEventListener('mousewheel', handleMouseWheel); 
+	window.addEventListener('DOMMouseScroll', handleMouseWheel); 
 
 	// Create a custom temporary node to detect user's click position
 	var wrapElName = 'hl-wrap'; 
@@ -23,9 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	var highlightableClassName = 'hl-highlightable'; 
 	var highlightableElements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote']; 
-	
-	// A stack of highlight actions for undo/redo
-	
 
 	function init() {
 		var contentEl = document.querySelector('#content'); 
@@ -158,28 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 		highlightHistory.push(highlightAction); 
 
-		setTimeout(function() {
-			var lastAction = highlightHistory.pop(); 
-
-			console.log('lastAction'); 
-			console.log(lastAction); 
-
-			for (var changedEl in lastAction) {
-				if (!lastAction.hasOwnProperty(changedEl)) return;  
-
-				console.log(changedEl); 
-				var restoredHTML = ''; 
-
-				var changedObjs = lastAction[changedEl]; 
-
-				for (var i = 0; i < changedObjs.length; i++) {
-					restoredHTML = JsDiff.applyPatch(changedEl.innerHTML, changedObjs[i]); 
-				}
-
-				changedEl.innerHTML = restoredHTML; 
-			}
-		}, 1000);
-		
+		console.log(highlightAction); 
 		
 		// Remove selection in caes highlighted
 		if (isHighlightComplete) {
@@ -191,6 +169,15 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	}
 
+	// Handle user mouse wheel scroll
+	function handleMouseWheel(e) {
+		var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail))); 
+		var isDownwards = (delta === -1) ? true : false; 
+
+		console.log('handleMouseWheel(), delta=' + delta); 
+
+		switchKeyword(isDownwards); 
+	}
 
 	function handleDoubleClick(e) {
 		console.log('handleDoubleClick'); 
@@ -199,7 +186,49 @@ document.addEventListener('DOMContentLoaded', function() {
 		e.preventDefault(); 
 	}
 
-	function activateItem(itemEl) {
+	// Switch keyword
+	function switchKeyword(isDownwards) {
+		keywordItemEls;
+
+		console.log('switchKeyword, isDownwards==' + isDownwards); 
+		console.log(currentActiveItem); 
+
+		if (currentActiveItem === null) {
+			activateKeyword(keywordItemEls[0]); 
+		}
+		
+		else {
+			var currentIndex = Array.prototype.indexOf.call(keywordItemEls, currentActiveItem); 
+			var numKeywords = keywordItemEls.length
+			console.log(keywordItemEls.length); 
+
+			if (isDownwards) {
+				if (currentIndex == numKeywords - 1) {
+					// Do nothing
+				}
+
+				else {
+					activateKeyword(currentActiveItem.nextElementSibling); 
+				}
+			}
+			
+			else {
+				if (currentIndex == 0) {
+					// Do nothing
+				}
+
+				else {
+					activateKeyword(currentActiveItem.previousElementSibling); 
+				}
+			}
+		}
+		
+	}
+
+	function activateKeyword(itemEl) {
+		console.log('activateKeyword');
+		console.log(itemEl); 
+
 		// If item is already active, do nothing
 		if (currentActiveItem == itemEl) {
 			return; 
@@ -208,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		if (currentActiveItem) {
 			deactiveItem(currentActiveItem); 
 		}
+
 		currentActiveItem = itemEl; 
 
 		highlightColor = itemEl.dataset.highlightColor; 
@@ -239,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		highlightColorEl.style.backgroundColor = highlightColor; 
 
 		itemEl.addEventListener('click', function(e) {
-			activateItem(itemEl); 
+			activateKeyword(itemEl); 
 
 			e.preventDefault(); 
 		}); 
