@@ -2,6 +2,8 @@ const ELEMENT_NODE_TYPE = 1;
 const TEXT_NODE_TYPE = 3; 
 var highlightColor = '#fff178'; 
 
+var highlightHistory = []; 
+
 document.addEventListener('DOMContentLoaded', function() {
 	// Select all keyword item DOM elements
 	var keywordItemEls = document.querySelectorAll('.item-keyword'); 
@@ -12,15 +14,18 @@ document.addEventListener('DOMContentLoaded', function() {
 	window.addEventListener('dblclick', handleDoubleClick); 
 
 	// Create a custom temporary node to detect user's click position
-	var wrapElName = 'nz-wrap'; 
+	var wrapElName = 'hl-wrap'; 
 	var WrapElement = document.registerElement(wrapElName); 
 
 	// Create a custom highlight DOM element
-	var highlightElName = 'nz-highlight'; 
+	var highlightElName = 'hl-highlight'; 
 	var HighlightElement = document.registerElement(highlightElName); 
 
-	var highlightableClassName = 'nz-highlightable'; 
+	var highlightableClassName = 'hl-highlightable'; 
 	var highlightableElements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote']; 
+	
+	// A stack of highlight actions for undo/redo
+	
 
 	function init() {
 		var contentEl = document.querySelector('#content'); 
@@ -29,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		contentChildNodes.forEach(function(el, index, childNodes) {
 			if ((el.classList != undefined && el.classList.contains(highlightableClassName)) || (highlightableElements.indexOf(el.nodeName.toLowerCase()) > -1)) {
 				paragraphEls.push(el); 
-				wrapAllWordsInElement(el);  
+				wrapAllWordsInElement(el); 
 			}
 		}); 
 	}
@@ -54,70 +59,48 @@ document.addEventListener('DOMContentLoaded', function() {
 		console.log(selection.toString()); 
 
 		// The Node in which the selection begins
-		var anchorNode = selection.anchorNode; 
+		var startNode = selection.anchorNode; 
 
 		// The Node in which the selection ends
-		var focusNode = selection.focusNode; 
+		var endNode = selection.focusNode; 
 
-		// If the user made a selection backwards (from right to left), 
-		// switch the anchor and focusNode
-		console.log('anchorNode.compareDocumentPosition(focusNode)'); 
-		console.log(anchorNode.compareDocumentPosition(focusNode)); 
-
-		if (anchorNode.compareDocumentPosition(focusNode) & Node.DOCUMENT_POSITION_PRECEDING) {
-			console.log('preceding'); 
-			
-			var tempNode = anchorNode; 
-			anchorNode = focusNode; 
-			focusNode = tempNode; 
-		} else if (anchorNode.compareDocumentPosition(focusNode) & Node.DOCUMENT_POSITION_FOLLOWING) {
-			console.log('following'); 
-		} else {
-			console.log('not both'); 
+		// If user selected in reverse direction, swap start and end node
+		if (startNode.compareDocumentPosition(endNode) & Node.DOCUMENT_POSITION_PRECEDING) {
+			var tempNode = startNode; 
+			startNode = endNode; 
+			endNode = tempNode; 
 		}
-
-		console.log('anchorNode'); 
-		console.log(anchorNode); 
 
 		var beginParagraphEl, beginSpanEl, endParagraphEl, endSpanEl; 
 
-		if (anchorNode.parentNode.nodeName.toLowerCase() === wrapElName.toLowerCase()) {
-			beginParagraphEl = anchorNode.parentNode.parentNode; 
-			beginSpanEl = anchorNode.parentNode; 
-		} else if (anchorNode.parentNode.nodeName === "P") {
-			beginParagraphEl = anchorNode.parentNode; 
-			beginSpanEl = anchorNode.nextSibling; 
+		if (startNode.parentNode.nodeName.toLowerCase() === wrapElName.toLowerCase()) {
+			beginParagraphEl = startNode.parentNode.parentNode; 
+			beginSpanEl = startNode.parentNode; 
+		} else if (startNode.parentNode.nodeName === "P") {
+			beginParagraphEl = startNode.parentNode; 
+			beginSpanEl = startNode.nextSibling; 
 		}
 
-		console.log('beginParagraphEl'); 
-		console.log(beginParagraphEl); 
-		console.log('beginSpanEl'); 
-		console.log(beginSpanEl); 
-		
-		if (focusNode.parentNode.nodeName.toLowerCase() === wrapElName.toLowerCase()) {
-			endParagraphEl = focusNode.parentNode.parentNode; 
-			endSpanEl = focusNode.parentNode; 
-		} else if (focusNode.parentNode.nodeName === "P") {
-			endParagraphEl = focusNode.parentNode; 
-			endSpanEl = focusNode.previousSibling; 
+		if (endNode.parentNode.nodeName.toLowerCase() === wrapElName.toLowerCase()) {
+			endParagraphEl = endNode.parentNode.parentNode; 
+			endSpanEl = endNode.parentNode; 
+		} else if (endNode.parentNode.nodeName === "P") {
+			endParagraphEl = endNode.parentNode; 
+			endSpanEl = endNode.previousSibling; 
 		}
-
-		console.log('endParagraphEl'); 
-		console.log(endParagraphEl); 
-		console.log('endSpanEl'); 
-		console.log(endSpanEl); 
-		
-		// If the user highlighted in a single paragraph
-		// Build innerHTML and replace the paragraph's innerHTML
-		console.log(beginParagraphEl.childNodes.length); 
 
 		var highlightedInnerHTML
 		var isHighlighting = false; 
 		var isHighlightComplete = false; 
 
+		var highlightAction = {}; 
+
 		// Highlight
 		paragraphEls.forEach(function(pEl, pIndex, pEls) {
-			if (isHighlightComplete) {
+			// If highlighting is complete
+			// or highlighting hasn't started but we haven't reached the beginning paragraph, 
+			// do nothing and skip iteration
+			if (isHighlightComplete || (!isHighlighting && (pEl !== beginParagraphEl))) {
 				return;
 			}
 
@@ -129,8 +112,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 			pEl.childNodes.forEach(function(el, index, childNodes) {
 				if (el === beginSpanEl) {
-					console.log('beginSpanEl found'); 
-					console.log(el); 
 					isHighlighting = true;  
 					
 					highlightedInnerHTML += '<' + highlightElName + ' style="background-color: ' + highlightColor + ';">'; 
@@ -138,8 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
 				}
 
 				else if (el === endSpanEl) {
-					console.log('endSpanEl found'); 
-					console.log(el); 
 					isHighlighting = false; 
 					isHighlightComplete = true; 
 
@@ -169,12 +148,38 @@ document.addEventListener('DOMContentLoaded', function() {
 			if (isHighlighting) {
 				highlightedInnerHTML += '</' + highlightElName + '>';
 			}
+			
+			// Save a patch to highlight history
+			highlightAction[pEl] = JsDiff.diffWordsWithSpace(highlightedInnerHTML, pEl.innerHTML);
 
+			// Render
 			pEl.innerHTML = highlightedInnerHTML; 
 		}); // END: paragraphEls.forEach(function(pEl, pIndex, pEls) {}
 
-		console.log('highlightedInnerHTML'); 
-		console.log(highlightedInnerHTML); 
+		highlightHistory.push(highlightAction); 
+
+		setTimeout(function() {
+			var lastAction = highlightHistory.pop(); 
+
+			console.log('lastAction'); 
+			console.log(lastAction); 
+
+			for (var changedEl in lastAction) {
+				if (!lastAction.hasOwnProperty(changedEl)) return;  
+
+				console.log(changedEl); 
+				var restoredHTML = ''; 
+
+				var changedObjs = lastAction[changedEl]; 
+
+				for (var i = 0; i < changedObjs.length; i++) {
+					restoredHTML = JsDiff.applyPatch(changedEl.innerHTML, changedObjs[i]); 
+				}
+
+				changedEl.innerHTML = restoredHTML; 
+			}
+		}, 1000);
+		
 		
 		// Remove selection in caes highlighted
 		if (isHighlightComplete) {
@@ -205,7 +210,6 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 		currentActiveItem = itemEl; 
 
-		console.log('activateItem()'); 
 		highlightColor = itemEl.dataset.highlightColor; 
 		var highlightColorEl = itemEl.querySelector('.highlight-color'); 
 		var highlightKeywordEl = itemEl.querySelector('.highlight-keyword'); 
@@ -217,12 +221,9 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 
 	function deactiveItem(itemEl) {
-		console.log('deactiveItem()'); 
-
 		var highlightColor = itemEl.dataset.highlightColor; 
 		var highlightColorEl = itemEl.querySelector('.highlight-color'); 
 		var highlightKeywordEl = itemEl.querySelector('.highlight-keyword');
-
 
 		highlightColorEl.style.backgroundColor = highlightColor; 
 		itemEl.classList.remove('active'); 
