@@ -4,6 +4,8 @@ var highlightColor = '#fff178';
 
 var highlightHistory = []; 
 
+var globalEl = null; 
+
 document.addEventListener('DOMContentLoaded', function() {
 	// Select all keyword item DOM elements
 	var keywordItemEls = document.querySelectorAll('.item-keyword'); 
@@ -14,6 +16,12 @@ document.addEventListener('DOMContentLoaded', function() {
 	window.addEventListener('dblclick', handleDoubleClick); 
 	window.addEventListener('mousewheel', handleMouseWheel); 
 	window.addEventListener('DOMMouseScroll', handleMouseWheel); 
+
+	// Controls
+	var undoBtnEl = document.getElementById('btn-undo'); 
+	var redoBtnEl = document.getElementById('btn-redo'); 
+	var nextPageBtnEl = document.getElementById('btn-next'); 
+	var previousPageBtnEl = document.getElementById('btn-prev'); 
 
 	// Create a custom temporary node to detect user's click position
 	var wrapElName = 'hl-wrap'; 
@@ -36,6 +44,11 @@ document.addEventListener('DOMContentLoaded', function() {
 				wrapAllWordsInElement(el); 
 			}
 		}); 
+
+		undoBtnEl.addEventListener('click', function(e) {
+			e.preventDefault(); 
+			undoHighlight(); 
+		});
 	}
 
 	function wrapAllWordsInElement(paragraphEl) {
@@ -92,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		var isHighlighting = false; 
 		var isHighlightComplete = false; 
 
-		var highlightAction = {}; 
+		var highlightAction = []; 
 
 		// Highlight
 		paragraphEls.forEach(function(pEl, pIndex, pEls) {
@@ -149,7 +162,11 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 			
 			// Save a patch to highlight history
-			highlightAction[pEl] = JsDiff.diffWordsWithSpace(highlightedInnerHTML, pEl.innerHTML);
+			highlightAction.push({
+				el: pEl,
+				html: pEl.innerHTML
+			});
+			console.log('p1 type=' + typeof(pEl)); 
 
 			// Render
 			pEl.innerHTML = highlightedInnerHTML; 
@@ -157,8 +174,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 		highlightHistory.push(highlightAction); 
 
-		console.log(highlightAction); 
-		
 		// Remove selection in caes highlighted
 		if (isHighlightComplete) {
 			if (selection.removeAllRanges) {
@@ -222,7 +237,21 @@ document.addEventListener('DOMContentLoaded', function() {
 				}
 			}
 		}
-		
+	}
+
+	
+	function undoHighlight() {
+		var lastAction = highlightHistory.pop(); 
+
+		for (var i = 0; i < lastAction.length; i++) {
+			var action = lastAction[i]; 
+
+			action.el.innerHTML = action.html; 
+		}
+	}
+
+	function redoHighlight() {
+
 	}
 
 	function activateKeyword(itemEl) {

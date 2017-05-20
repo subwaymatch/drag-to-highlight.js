@@ -31,6 +31,22 @@ body {
 	margin-top: 50px; 
 }
 
+#controls {
+	margin-top: 50px; 
+}
+
+a.button {
+	cursor: pointer; 
+	font-size: 18px; 
+	line-height: 18px; 
+	color: #ccc; 
+	border: 1px solid #e5e5e5; 
+	display: block; 
+	padding: 16px 20px; 
+	margin-bottom: 5px; 
+	border-radius: 4px; 
+}
+
 .item-keyword {
 	color: #777; 
 	cursor: pointer; 
