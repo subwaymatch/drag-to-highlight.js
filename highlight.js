@@ -2,7 +2,8 @@ const ELEMENT_NODE_TYPE = 1;
 const TEXT_NODE_TYPE = 3; 
 var highlightColor = '#fff178'; 
 
-var highlightHistory = []; 
+var undoHistoryStack = []; 
+var redoHistoryStack = []; 
 
 var globalEl = null; 
 
@@ -12,31 +13,23 @@ document.addEventListener('DOMContentLoaded', function() {
 	var currentActiveItem = null; 
 	var paragraphEls = []; 
 
-	window.addEventListener('mouseup', handleWindowMouseUp);
-	window.addEventListener('dblclick', handleDoubleClick); 
-	window.addEventListener('mousewheel', handleMouseWheel); 
-	window.addEventListener('DOMMouseScroll', handleMouseWheel); 
-
-	// Controls
-	var undoBtnEl = document.getElementById('btn-undo'); 
-	var redoBtnEl = document.getElementById('btn-redo'); 
-	var nextPageBtnEl = document.getElementById('btn-next'); 
-	var previousPageBtnEl = document.getElementById('btn-prev'); 
-
 	// Create a custom temporary node to detect user's click position
-	var wrapElName = 'hl-wrap'; 
+	const wrapElName = 'hl-wrap'; 
 	var WrapElement = document.registerElement(wrapElName); 
 
 	// Create a custom highlight DOM element
-	var highlightElName = 'hl-highlight'; 
+	const highlightElName = 'hl-highlight'; 
 	var HighlightElement = document.registerElement(highlightElName); 
 
-	var highlightableClassName = 'hl-highlightable'; 
+	const highlightableClassName = 'hl-highlightable'; 
 	var highlightableElements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote']; 
 
 	function init() {
 		var contentEl = document.querySelector('#content'); 
 		var contentChildNodes = contentEl.childNodes; 
+
+		// Activate the first keyword item
+		activateKeyword(keywordItemEls[0]); 
 
 		contentChildNodes.forEach(function(el, index, childNodes) {
 			if ((el.classList != undefined && el.classList.contains(highlightableClassName)) || (highlightableElements.indexOf(el.nodeName.toLowerCase()) > -1)) {
@@ -45,10 +38,16 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 		}); 
 
-		undoBtnEl.addEventListener('click', function(e) {
-			e.preventDefault(); 
-			undoHighlight(); 
-		});
+		attachEventHandlers(); 
+	}
+
+	function attachEventHandlers() {
+		window.addEventListener('mouseup', handleWindowMouseUp);
+		window.addEventListener('dblclick', handleDoubleClick); 
+		window.addEventListener('mousewheel', handleMouseWheel); 
+		window.addEventListener('DOMMouseScroll', handleMouseWheel); 
+
+		document.addEventListener('keydown', handleKeyDown); 
 	}
 
 	function wrapAllWordsInElement(paragraphEl) {
@@ -105,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		var isHighlighting = false; 
 		var isHighlightComplete = false; 
 
-		var highlightAction = []; 
+		var originalStatus = []; 
 
 		// Highlight
 		paragraphEls.forEach(function(pEl, pIndex, pEls) {
@@ -162,17 +161,17 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 			
 			// Save a patch to highlight history
-			highlightAction.push({
+			originalStatus.push({
 				el: pEl,
 				html: pEl.innerHTML
 			});
-			console.log('p1 type=' + typeof(pEl)); 
 
 			// Render
 			pEl.innerHTML = highlightedInnerHTML; 
 		}); // END: paragraphEls.forEach(function(pEl, pIndex, pEls) {}
 
-		highlightHistory.push(highlightAction); 
+		undoHistoryStack.push(originalStatus); 
+		redoHistoryStack = []; 
 
 		// Remove selection in caes highlighted
 		if (isHighlightComplete) {
@@ -189,24 +188,36 @@ document.addEventListener('DOMContentLoaded', function() {
 		var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail))); 
 		var isDownwards = (delta === -1) ? true : false; 
 
-		console.log('handleMouseWheel(), delta=' + delta); 
-
 		switchKeyword(isDownwards); 
 	}
 
+	// TODO: handle doubleclick events
 	function handleDoubleClick(e) {
-		console.log('handleDoubleClick'); 
-
 		// Prevent text highlight on double click
 		e.preventDefault(); 
+	}
+
+	function handleKeyDown(e) {
+		var evtObj = window.event ? event : e; 
+
+		// Undo
+		if (evtObj.ctrlKey) {
+			// Undo (ctrl+z)
+			if (evtObj.keyCode == 90) {
+				undoHighlight(); 
+			}
+
+			// Redo (ctrl+y)
+			else if (evtObj.keyCode == 89) {
+				redoHighlight(); 
+			}
+			
+		}
 	}
 
 	// Switch keyword
 	function switchKeyword(isDownwards) {
 		keywordItemEls;
-
-		console.log('switchKeyword, isDownwards==' + isDownwards); 
-		console.log(currentActiveItem); 
 
 		if (currentActiveItem === null) {
 			activateKeyword(keywordItemEls[0]); 
@@ -241,23 +252,49 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	
 	function undoHighlight() {
-		var lastAction = highlightHistory.pop(); 
-
-		for (var i = 0; i < lastAction.length; i++) {
-			var action = lastAction[i]; 
-
-			action.el.innerHTML = action.html; 
+		// If no state exists for undoing, do nothing
+		if (undoHistoryStack.length === 0) {
+			return ; 
 		}
+
+		var stateToRestore = undoHistoryStack.pop(); 
+		var originalState = restore(stateToRestore); 
+
+		redoHistoryStack.push(originalState); 
 	}
 
 	function redoHighlight() {
+		// If no state exists for redoing, do nothing
+		if (redoHistoryStack.length === 0) {
+			return ; 
+		}
 
+		var stateToRestore = redoHistoryStack.pop(); 
+		var originalState = restore(stateToRestore); 
+
+		undoHistoryStack.push(originalState); 
+	}
+
+	function restore(stateToRestore) {
+		var originalState = []; 
+
+		for (var i = 0; i < stateToRestore.length; i++) {
+			var status = stateToRestore[i]; 
+
+			originalState.push({
+				el: status.el, 
+				html: status.el.innerHTML
+			});
+
+			status.el.innerHTML = status.html; 
+		}
+
+		stateToRestore.html = status.innerHTML; 
+
+		return originalState; 
 	}
 
 	function activateKeyword(itemEl) {
-		console.log('activateKeyword');
-		console.log(itemEl); 
-
 		// If item is already active, do nothing
 		if (currentActiveItem == itemEl) {
 			return; 
