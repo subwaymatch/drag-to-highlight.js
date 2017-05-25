@@ -12,6 +12,10 @@ body {
 	line-height: 32px; 
 }
 
+	#content h1 {
+		font-weight: bold;
+	}
+
 	#content p {
 		margin-top: 30px; 
 	}
