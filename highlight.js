@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			endSpanEl = endNode.previousSibling; 
 		}
 
-		var highlightedInnerHTML
+		var highlightedInnerHTML;
 		var isHighlighting = false; 
 		var isHighlightComplete = false; 
 
@@ -198,10 +198,14 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 
 	function handleKeyDown(e) {
-		var evtObj = window.event ? event : e; 
+		var evtObj = window.event ? event : e;
 
-		// Undo
-		if (evtObj.ctrlKey) {
+		console.log('handleKeyDown(e)');
+		console.log(evtObj.metaKey);
+
+		// Keypress event's metaKey property refers to
+		// a Mac's s
+		if (evtObj.metaKey || evtObj.ctrlKey) {
 			// Undo (ctrl+z)
 			if (evtObj.keyCode == 90) {
 				undoHighlight(); 
