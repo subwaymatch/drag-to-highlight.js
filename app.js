@@ -1,212 +1,102 @@
-const ELEMENT_NODE_TYPE = 1;
-const TEXT_NODE_TYPE = 3;
-var highlightColor = '#fff178';
-
-var undoHistoryStack = [];
-var redoHistoryStack = [];
-
 var runHighlightApp = function() {
 	// Select all keyword item DOM elements
 	var keywordItemEls = document.querySelectorAll('.item-keyword');
 	var currentActiveItem = null;
-	var paragraphEls = [];
+	var pageEls = null;
+	var paginationListEl = null;
+	var currentPageIndex = null;
+	var highlighter;
 
-	// Create a custom temporary node to detect user's click position
-	const wrapElName = 'hl-wrap';
-	var WrapElement = document.registerElement(wrapElName);
+	var init = function() {
+		generatePages();
+		attachEventHandlers();
 
-	// Create a custom highlight DOM element
-	const highlightElName = 'hl-highlight';
-	var HighlightElement = document.registerElement(highlightElName);
+		var allPageEls = document.querySelectorAll('.page');
 
-	const highlightableClassName = 'hl-highlightable';
-	var highlightableElements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'];
-
-	function init() {
-		var contentEl = document.querySelector('#content');
-		var contentChildNodes = contentEl.childNodes;
+		highlighter = new DragToHighlight(allPageEls, {});
 
 		// Activate the first keyword item
 		activateKeyword(keywordItemEls[0]);
+	};
 
-		contentChildNodes.forEach(function (el, index, childNodes) {
-			console.log(el);
-
-			if ((el.classList != undefined && el.classList.contains(highlightableClassName)) || (highlightableElements.indexOf(el.nodeName.toLowerCase()) > -1)) {
-				paragraphEls.push(el);
-				wrapAllWordsInElement(el);
-			}
-		});
-
-		attachEventHandlers();
-	}
-
-	function attachEventHandlers() {
-		window.addEventListener('mouseup', handleWindowMouseUp);
+	var attachEventHandlers = function() {
 		window.addEventListener('mousewheel', handleMouseWheel);
 		window.addEventListener('DOMMouseScroll', handleMouseWheel);
 
 		document.addEventListener('keydown', handleKeyDown);
-	}
-
-	function wrapAllWordsInElement(el) {
-		el.innerHTML = el.innerHTML.replace(/([^\s-.,;:!?()[\]{}<>"]+)/g, '<' + wrapElName + '>$1</' + wrapElName + '>');
-	}
-
-	// 1. Get selection
-	// 2. Check whether the user has began and ended the highlight in words, or in whitespaces or other chars (dot, semicolon, etc)
-	// 3. Highlight
-	function handleWindowMouseUp(e) {
-		var selection = window.getSelection ? window.getSelection() : document.selection;
-
-		// If no selection has made, do nothing
-		if (selection.toString().trim() == "") {
-			return;
-		}
-
-		// The Node in which the selection begins
-		var startNode = selection.anchorNode;
-
-		// The Node in which the selection ends
-		var endNode = selection.focusNode;
-
-		// If user selected in reverse direction, swap start and end node
-		if (startNode.compareDocumentPosition(endNode) & Node.DOCUMENT_POSITION_PRECEDING) {
-			var tempNode = startNode;
-			startNode = endNode;
-			endNode = tempNode;
-		}
-
-		var beginParagraphEl, beginSpanEl, endParagraphEl, endSpanEl;
-
-		if (startNode.parentNode.nodeName.toLowerCase() === wrapElName.toLowerCase()) {
-			beginParagraphEl = startNode.parentNode.parentNode;
-			beginSpanEl = startNode.parentNode;
-		} else if (startNode.parentNode.nodeName === "P") {
-			beginParagraphEl = startNode.parentNode;
-			beginSpanEl = startNode.nextSibling;
-		}
-
-		if (endNode.parentNode.nodeName.toLowerCase() === wrapElName.toLowerCase()) {
-			endParagraphEl = endNode.parentNode.parentNode;
-			endSpanEl = endNode.parentNode;
-		} else if (endNode.parentNode.nodeName === "P") {
-			endParagraphEl = endNode.parentNode;
-			endSpanEl = endNode.previousSibling;
-		}
-
-		var highlightedInnerHTML;
-		var isHighlighting = false;
-		var isHighlightComplete = false;
-
-		var originalStatus = [];
-
-		// Highlight
-		paragraphEls.forEach(function (pEl, pIndex, pEls) {
-			// If highlighting is complete
-			// or highlighting hasn't started but we haven't reached the beginning paragraph, 
-			// do nothing and skip iteration
-			if (isHighlightComplete || (!isHighlighting && (pEl !== beginParagraphEl))) {
-				return;
-			}
-
-			highlightedInnerHTML = '';
-
-			if (isHighlighting) {
-				highlightedInnerHTML += '<' + highlightElName + ' style="background-color: ' + highlightColor + ';">';
-			}
-
-			pEl.childNodes.forEach(function (el, index, childNodes) {
-				if (el === beginSpanEl) {
-					isHighlighting = true;
-
-					highlightedInnerHTML += '<' + highlightElName + ' style="background-color: ' + highlightColor + ';">';
-					highlightedInnerHTML += el.innerText;
-				}
-
-				else if (el === endSpanEl) {
-					isHighlighting = false;
-					isHighlightComplete = true;
-
-					highlightedInnerHTML += el.innerText + '</' + highlightElName + '>';
-				}
-
-				else if (isHighlighting) {
-					if (el.nodeType === ELEMENT_NODE_TYPE) {
-						highlightedInnerHTML += el.innerText;
-					} else if (el.nodeType === TEXT_NODE_TYPE) {
-						highlightedInnerHTML += el.nodeValue;
-					}
-				}
-
-				else if (!isHighlighting) {
-					if (el.nodeName.toLowerCase() === highlightElName) {
-						highlightedInnerHTML += el.outerHTML;
-					}
-					else if (el.nodeType === ELEMENT_NODE_TYPE) {
-						highlightedInnerHTML += el.outerHTML;
-					} else if (el.nodeType === TEXT_NODE_TYPE) {
-						highlightedInnerHTML += el.nodeValue;
-					}
-				}
-			}); // END: pEl.childNodes.forEach(function(el, index, childNodes) {}
-
-			if (isHighlighting) {
-				highlightedInnerHTML += '</' + highlightElName + '>';
-			}
-
-			// Save a patch to highlight history
-			originalStatus.push({
-				el: pEl,
-				html: pEl.innerHTML
-			});
-
-			// Render
-			pEl.innerHTML = highlightedInnerHTML;
-		}); // END: paragraphEls.forEach(function(pEl, pIndex, pEls) {}
-
-		undoHistoryStack.push(originalStatus);
-		redoHistoryStack = [];
-
-		// Remove selection if highlighting is complete
-		if (isHighlightComplete) {
-			if (selection.removeAllRanges) {
-				selection.removeAllRanges();
-			} else if (selection.empty) {
-				selection.empty();
-			}
-		}
-	}
+	};
 
 	// Handle user mouse wheel scroll
 	// TODO: let user set sensitivity since Mac's touchbar's sensitivity is much different from a regular mouse
-	function handleMouseWheel(e) {
+	var handleMouseWheel = function(e) {
 		var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
 		var isDownwards = (delta === -1) ? true : false;
 
 		switchKeyword(isDownwards);
-	}
+	};
 
-	function handleKeyDown(e) {
+	var handleKeyDown = function(e) {
 		var evtObj = window.event ? event : e;
 
 		// Keypress event's metaKey property refers to
 		// a Mac's command (Apple) key
 		if (evtObj.metaKey || evtObj.ctrlKey) {
 			// Undo (ctrl+z)
-			if (evtObj.keyCode == 90) {
-				undoHighlight();
+			if (evtObj.keyCode === 90) {
+				highlighter.undo();
 			}
 
 			// Redo (ctrl+y)
-			else if (evtObj.keyCode == 89) {
-				redoHighlight();
+			else if (evtObj.keyCode === 89) {
+				highlighter.redo();
 			}
 		}
-	}
+	};
+
+	var generatePages = function() {
+		pageEls = document.querySelectorAll('#content .page');
+		paginationListEl = document.querySelector('#list-pagination');
+
+		if (pageEls.length > 0) {
+			pageEls.forEach(function(pageEl, index) {
+				var newListItemElement = document.createElement('LI');
+				newListItemElement.innerHTML = index + 1;
+				newListItemElement.dataset.index = index;
+
+				newListItemElement.addEventListener('click', function() {
+					activatePage(index);
+				});
+
+				paginationListEl.appendChild(newListItemElement);
+
+				pageEl.style.display = 'none';
+			});
+
+			activatePage(0);
+		}
+	};
+
+	var activatePage = function(newPageIndex) {
+		// If user attempts to activate already active page, do nothing and return
+		if (newPageIndex === currentPageIndex) {
+			return;
+		}
+
+		var pageListEls = paginationListEl.querySelectorAll('li');
+
+		if (currentPageIndex !== null) {
+			pageEls[currentPageIndex].style.display = 'none';
+			pageListEls[currentPageIndex].classList.remove('active');
+		}
+
+		pageEls[newPageIndex].style.display = 'block';
+		pageListEls[newPageIndex].classList.add('active');
+
+		currentPageIndex = newPageIndex;
+	};
 
 	// Switch keyword
-	function switchKeyword(isDownwards) {
+	var switchKeyword = function(isDownwards) {
 		keywordItemEls;
 
 		if (currentActiveItem === null) {
@@ -237,53 +127,10 @@ var runHighlightApp = function() {
 				}
 			}
 		}
-	}
+	};
 
 
-	function undoHighlight() {
-		// If no state exists for undoing, do nothing
-		if (undoHistoryStack.length === 0) {
-			return;
-		}
-
-		var stateToRestore = undoHistoryStack.pop();
-		var originalState = restore(stateToRestore);
-
-		redoHistoryStack.push(originalState);
-	}
-
-	function redoHighlight() {
-		// If no state exists for redoing, do nothing
-		if (redoHistoryStack.length === 0) {
-			return;
-		}
-
-		var stateToRestore = redoHistoryStack.pop();
-		var originalState = restore(stateToRestore);
-
-		undoHistoryStack.push(originalState);
-	}
-
-	function restore(stateToRestore) {
-		var originalState = [];
-
-		for (var i = 0; i < stateToRestore.length; i++) {
-			var status = stateToRestore[i];
-
-			originalState.push({
-				el: status.el,
-				html: status.el.innerHTML
-			});
-
-			status.el.innerHTML = status.html;
-		}
-
-		stateToRestore.html = status.innerHTML;
-
-		return originalState;
-	}
-
-	function activateKeyword(itemEl) {
+	var activateKeyword = function(itemEl) {
 		// If item is already active, do nothing
 		if (currentActiveItem == itemEl) {
 			return;
@@ -296,14 +143,17 @@ var runHighlightApp = function() {
 		currentActiveItem = itemEl;
 
 		highlightColor = itemEl.dataset.highlightColor;
+
+		highlighter.setColor(highlightColor);
+
 		var highlightKeywordEl = itemEl.querySelector('.highlight-keyword');
 
 		itemEl.classList.add('active');
 
 		highlightKeywordEl.style.backgroundColor = highlightColor;
-	}
+	};
 
-	function deactiveItem(itemEl) {
+	var deactiveItem = function(itemEl) {
 		var highlightColor = itemEl.dataset.highlightColor;
 		var highlightColorEl = itemEl.querySelector('.highlight-color');
 		var highlightKeywordEl = itemEl.querySelector('.highlight-keyword');
@@ -312,7 +162,7 @@ var runHighlightApp = function() {
 		itemEl.classList.remove('active');
 		highlightKeywordEl.style.backgroundColor = '';
 
-	}
+	};
 
 	keywordItemEls.forEach(function (itemEl, index, itemEls) {
 		// Initialize and create color

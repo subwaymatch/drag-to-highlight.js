@@ -1,4 +1,4 @@
-# drag-to-highlight.js
+# drag-to-drag-to-highlight.js
 A library to support user highlighting while reading on the browser
 
 <br><br>
