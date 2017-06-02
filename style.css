@@ -107,7 +107,12 @@ a.button {
 			border: 1px solid #444;
 		}
 
+hl-wrap {
+	cursor: url('images/icons/cursor_highlighter.png'), auto;
+}
+
 hl-highlight {
+	cursor: url('images/icons/cursor_eraser.png'), auto;
 }
 
 ::selection {

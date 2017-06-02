@@ -39,6 +39,8 @@ function DragToHighlight(contentEls, options) {
 				if ((el.classList != undefined && el.classList.contains(highlightableClassName)) || (highlightableElements.indexOf(el.nodeName.toLowerCase()) > -1)) {
 					paragraphEls.push(el);
 					wrapAllWordsInElement(el);
+
+					el.addEventListener('click', handleClick);
 				}
 			});
 		});
@@ -73,7 +75,7 @@ function DragToHighlight(contentEls, options) {
 	// 1. Get selection
 	// 2. Check whether the user has began and ended the highlight in words, or in whitespaces or other chars (dot, semicolon, etc)
 	// 3. Highlight
-	function handleWindowMouseUp(e) {
+	var handleWindowMouseUp = function(e) {
 		// Get current selection (range to highlight)
 		var selection = window.getSelection ? window.getSelection() : document.selection;
 
@@ -194,7 +196,28 @@ function DragToHighlight(contentEls, options) {
 				selection.empty();
 			}
 		}
-	}
+	};
+
+
+
+	var handleClick = function(e) {
+		console.log('handleClick()');
+		console.log(e);
+
+		if (e.target && e.target.nodeName.toLowerCase() == highlightElName) {
+			var newEl = document.createElement('div');
+			newEl.innerHTML = e.target.innerHTML;
+
+			wrapAllWordsInElement(newEl);
+
+			console.log(newEl.childNodes);
+
+			e.target.insertAdjacentHTML('beforebegin', newEl.innerHTML);
+			e.target.parentNode.removeChild(e.target);
+		}
+	};
+
+
 
 	/**
 	 * Restore changed elements to original state
@@ -277,6 +300,9 @@ function DragToHighlight(contentEls, options) {
 	this.setColor = function(newColor) {
 		highlightColor = newColor;
 	};
+
+
+
 
 	init();
 }

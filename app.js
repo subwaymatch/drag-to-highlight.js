@@ -37,6 +37,7 @@ var runHighlightApp = function() {
 
 	var handleKeyDown = function(e) {
 		var evtObj = window.event ? event : e;
+		console.log('keyCode: ' + evtObj.keyCode);
 
 		// Keypress event's metaKey property refers to
 		// a Mac's command (Apple) key
@@ -49,6 +50,18 @@ var runHighlightApp = function() {
 			// Redo (ctrl+y)
 			else if (evtObj.keyCode === 89) {
 				highlighter.redo();
+			}
+		}
+
+		else {
+			// Left arrow key
+			if (evtObj.keyCode === 37 || evtObj.keyCode === 33) {
+				moveToPrevPage();
+			}
+
+			// Right arrow key
+			else if (evtObj.keyCode === 39 || evtObj.keyCode === 34) {
+				moveToNextPage();
 			}
 		}
 	};
@@ -73,6 +86,22 @@ var runHighlightApp = function() {
 			});
 
 			activatePage(0);
+		}
+	};
+
+	var moveToNextPage = function() {
+		console.log('moveToNextPage()');
+
+		if (currentPageIndex < pageEls.length - 1) {
+			activatePage(currentPageIndex + 1);
+		}
+	};
+
+	var moveToPrevPage = function() {
+		console.log('moveToPrevPage()');
+
+		if (currentPageIndex > 0) {
+			activatePage(currentPageIndex - 1);
 		}
 	};
 
