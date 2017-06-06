@@ -4,6 +4,8 @@ function DragToHighlight(contentEls, options) {
 	const TEXT_NODE_TYPE = 3;
 
 	// User-configurable options
+	var options = options || {};
+
 	var highlightableElements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'];
 	var highlightColor = '#fff178';
 	var wrapElName = 'hl-wrap';								// A custom element to wrap each word in paragraphs to detect user click position
@@ -37,7 +39,7 @@ function DragToHighlight(contentEls, options) {
 			contentChildNodes.forEach(function (el, index, childNodes) {
 				if ((el.classList != undefined && el.classList.contains(highlightableClassName)) || (highlightableElements.indexOf(el.nodeName.toLowerCase()) > -1)) {
 					paragraphEls.push(el);
-					wrapAllWordsInElement(el);
+					el.innerHTML = wrapAllWordsInElement(el.innerHTML);
 
 					el.addEventListener('click', handleClick);
 				}
@@ -61,8 +63,8 @@ function DragToHighlight(contentEls, options) {
 	 *
 	 * @param el Target DOM element
 	 */
-	var wrapAllWordsInElement = function(el) {
-		el.innerHTML = el.innerHTML.replace(/([^\s-.,;:!?()[\]{}<>"]+)/g, '<' + wrapElName + '>$1</' + wrapElName + '>');
+	var wrapAllWordsInElement = function(html) {
+		return html.replace(/([^\s-.,;:!?()[\]{}<>"]+)/g, '<' + wrapElName + '>$1</' + wrapElName + '>');
 	};
 
 	/**
@@ -89,7 +91,7 @@ function DragToHighlight(contentEls, options) {
 		// The Node in which the selection ends
 		var endNode = selection.focusNode;
 
-		// If user selected in reverse direction, swap start and end node
+		// If user selected in reverse direction (dragged from right to left), swap start and end node
 		if (startNode.compareDocumentPosition(endNode) & Node.DOCUMENT_POSITION_PRECEDING) {
 			var tempNode = startNode;
 			startNode = endNode;
@@ -198,22 +200,45 @@ function DragToHighlight(contentEls, options) {
 	};
 
 
-
+	/**
+	 * Event handler for click events
+	 *
+	 * @param e Click event
+	 */
 	var handleClick = function(e) {
 		console.log('handleClick()');
 		console.log(e);
 
-		if (e.target && e.target.nodeName.toLowerCase() == highlightElName) {
-			var newEl = document.createElement('div');
-			newEl.innerHTML = e.target.innerHTML;
+		deleteHighlightedElement(e.target);
+	};
 
-			wrapAllWordsInElement(newEl);
 
-			console.log(newEl.childNodes);
+	/**
+	 * Delete a highlighted element
+	 *
+	 * @param targetEl Element to unhighlight
+	 */
+	var deleteHighlightedElement = function(targetEl) {
+		if (targetEl && targetEl.nodeName.toLowerCase() == highlightElName) {
+			var originalStatus = [];
 
-			e.target.insertAdjacentHTML('beforebegin', newEl.innerHTML);
-			e.target.parentNode.removeChild(e.target);
+			originalStatus.push({
+				el: targetEl.parentNode,
+				html: targetEl.parentNode.innerHTML
+			});
+
+			targetEl.insertAdjacentHTML('beforebegin', wrapAllWordsInElement(targetEl.innerHTML));
+			targetEl.parentNode.removeChild(targetEl);
+
+			undoHistoryStack.push(originalStatus);
+			redoHistoryStack = [];
 		}
+	};
+
+
+
+	var deleteHighlightedElementsByColor = function(hexString) {
+
 	};
 
 

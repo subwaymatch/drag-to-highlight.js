@@ -65,12 +65,12 @@ var runHighlightApp = function() {
 		}
 
 		else {
-			// Left arrow key
+			// Left arrow or Page Up key
 			if (evtObj.keyCode === 37 || evtObj.keyCode === 33) {
 				moveToPrevPage();
 			}
 
-			// Right arrow key
+			// Right arrow or Page Down Key
 			else if (evtObj.keyCode === 39 || evtObj.keyCode === 34) {
 				moveToNextPage();
 			}

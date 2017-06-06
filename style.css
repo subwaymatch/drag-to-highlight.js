@@ -71,6 +71,20 @@ a.button {
 	padding: 0 8px; 
 }
 
+.btn-delete {
+	display: inline-block;
+	margin-left: 10px;
+
+	font-size: 12px;
+	line-height: 12px;
+
+	padding-bottom: 5px;
+	border-bottom: 1px solid #ddd;
+	position: relative;
+	top: -2px;
+
+}
+
 
 #pagination {
 	font-family: 'Roboto', sans-serif;
