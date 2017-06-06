@@ -3,6 +3,8 @@ function DragToHighlight(contentEls, options) {
 	const ELEMENT_NODE_TYPE = 1;
 	const TEXT_NODE_TYPE = 3;
 
+	var _this = this;
+
 	// User-configurable options
 	var options = options || {};
 
@@ -237,12 +239,6 @@ function DragToHighlight(contentEls, options) {
 
 
 
-	var deleteHighlightedElementsByColor = function(hexString) {
-
-	};
-
-
-
 	/**
 	 * Restore changed elements to original state
 	 * Used internally to perform undo/redo actions
@@ -270,12 +266,25 @@ function DragToHighlight(contentEls, options) {
 	};
 
 
+	var rgb2hex = function(rgb) {
+		rgb = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+		return "#" + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
+	};
+
+	var hex = function(x) {
+		var hexDigits = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
+
+		return isNaN(x) ? "00" : hexDigits[(x - x % 16) / 16] + hexDigits[x % 16];
+	};
+
+
+
 	/**
 	 * Undo highlighting action
 	 *
 	 * If no previous state exists, this function will do nothing
 	 */
-	this.undo = function() {
+	_this.undo = function() {
 		// If no state exists for undoing, do nothing
 		if (undoHistoryStack.length === 0) {
 			return;
@@ -293,7 +302,7 @@ function DragToHighlight(contentEls, options) {
 	 *
 	 * If at latest state, do nothing
 	 */
-	this.redo = function() {
+	_this.redo = function() {
 		// If no state exists for redoing, do nothing
 		if (redoHistoryStack.length === 0) {
 			return;
@@ -311,7 +320,7 @@ function DragToHighlight(contentEls, options) {
 	 *
 	 * @returns {string} current highlighting color
 	 */
-	this.getColor = function() {
+	_this.getColor = function() {
 		return highlightColor;
 	};
 
@@ -321,11 +330,27 @@ function DragToHighlight(contentEls, options) {
 	 *
 	 * @param newColor new highlighting color
 	 */
-	this.setColor = function(newColor) {
+	_this.setColor = function(newColor) {
 		highlightColor = newColor;
 	};
 
 
+
+	_this.clearHighlightsByColor = function(hexColor) {
+		var allHighlightedEls = document.querySelectorAll(highlightElName);
+
+		allHighlightedEls.forEach(function(el) {
+			var highlightedColor = rgb2hex(el.style.backgroundColor);
+
+			if (highlightedColor === hexColor) {
+				deleteHighlightedElement(el);
+			}
+			console.log(hexColor);
+			console.log(rgb2hex(el.style.backgroundColor));
+		});
+
+		console.log(allHighlightedEls);
+	};
 
 
 	init();

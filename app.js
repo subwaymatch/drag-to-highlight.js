@@ -48,7 +48,6 @@ var runHighlightApp = function() {
 	 */
 	var handleKeyDown = function(e) {
 		var evtObj = window.event ? event : e;
-		console.log('keyCode: ' + evtObj.keyCode);
 
 		// Keypress event's metaKey property refers to
 		// a Mac's command (Apple) key
@@ -244,6 +243,15 @@ var runHighlightApp = function() {
 
 			e.preventDefault();
 		});
+
+		var clearBtnEl = itemEl.querySelector('.btn-clear');
+
+		clearBtnEl.addEventListener('click', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+
+			highlighter.clearHighlightsByColor(highlightColor);
+		}, true);
 	});
 
 	init();
