@@ -72,6 +72,7 @@ a.button {
 }
 
 .btn-clear {
+	color: #aaa;
 	display: inline-block;
 	margin-left: 10px;
 
@@ -82,8 +83,12 @@ a.button {
 	border-bottom: 1px solid #ddd;
 	position: relative;
 	top: -2px;
-
 }
+
+	.btn-clear:hover {
+		color: #ff5544;
+		border-color: #ff5544;
+	}
 
 
 #pagination {

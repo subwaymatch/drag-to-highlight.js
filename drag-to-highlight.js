@@ -335,7 +335,11 @@ function DragToHighlight(contentEls, options) {
 	};
 
 
-
+	/**
+	 * Clear all highlights of specific color
+	 *
+	 * @param hexColor Target highlight color
+	 */
 	_this.clearHighlightsByColor = function(hexColor) {
 		var allHighlightedEls = document.querySelectorAll(highlightElName);
 
@@ -345,8 +349,7 @@ function DragToHighlight(contentEls, options) {
 			if (highlightedColor === hexColor) {
 				deleteHighlightedElement(el);
 			}
-			console.log(hexColor);
-			console.log(rgb2hex(el.style.backgroundColor));
+
 		});
 
 		console.log(allHighlightedEls);
