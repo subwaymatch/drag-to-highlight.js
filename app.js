@@ -19,6 +19,9 @@ var runHighlightApp = function() {
 		activateKeyword(keywordItemEls[0]);
 	};
 
+	/**
+	 *  Attach event handlers
+	 */
 	var attachEventHandlers = function() {
 		window.addEventListener('mousewheel', handleMouseWheel);
 		window.addEventListener('DOMMouseScroll', handleMouseWheel);
@@ -26,8 +29,11 @@ var runHighlightApp = function() {
 		document.addEventListener('keydown', handleKeyDown);
 	};
 
-	// Handle user mouse wheel scroll
-	// TODO: let user set sensitivity since Mac's touchbar's sensitivity is much different from a regular mouse
+	/**
+	 * Event handler for mousewheel event
+	 *
+	 * @param e Mousewheel event object
+	 */
 	var handleMouseWheel = function(e) {
 		var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
 		var isDownwards = (delta === -1) ? true : false;
@@ -35,6 +41,11 @@ var runHighlightApp = function() {
 		switchKeyword(isDownwards);
 	};
 
+	/**
+	 * Event handler for keydown event
+	 *
+	 * @param e Keydown event object
+	 */
 	var handleKeyDown = function(e) {
 		var evtObj = window.event ? event : e;
 		console.log('keyCode: ' + evtObj.keyCode);
@@ -66,6 +77,9 @@ var runHighlightApp = function() {
 		}
 	};
 
+	/**
+	 * Divide .page elements into separate pages
+	 */
 	var generatePages = function() {
 		pageEls = document.querySelectorAll('#content .page');
 		paginationListEl = document.querySelector('#list-pagination');
@@ -89,6 +103,9 @@ var runHighlightApp = function() {
 		}
 	};
 
+	/**
+	 * Move to next page
+	 */
 	var moveToNextPage = function() {
 		console.log('moveToNextPage()');
 
@@ -97,6 +114,9 @@ var runHighlightApp = function() {
 		}
 	};
 
+	/**
+	 * Move to previous page
+	 */
 	var moveToPrevPage = function() {
 		console.log('moveToPrevPage()');
 
@@ -105,6 +125,11 @@ var runHighlightApp = function() {
 		}
 	};
 
+	/**
+	 * Show a specific page
+	 *
+	 * @param newPageIndex Page to show
+	 */
 	var activatePage = function(newPageIndex) {
 		// If user attempts to activate already active page, do nothing and return
 		if (newPageIndex === currentPageIndex) {
@@ -124,7 +149,11 @@ var runHighlightApp = function() {
 		currentPageIndex = newPageIndex;
 	};
 
-	// Switch keyword
+	/**
+	 * Switch keyword with mouse scroll direction
+	 *
+	 * @param isDownwards Whether the user has scrolled downwards
+	 */
 	var switchKeyword = function(isDownwards) {
 		keywordItemEls;
 
@@ -159,6 +188,11 @@ var runHighlightApp = function() {
 	};
 
 
+	/**
+	 * Activate a specific keyword
+	 *
+	 * @param itemEl Keyword item to activate
+	 */
 	var activateKeyword = function(itemEl) {
 		// If item is already active, do nothing
 		if (currentActiveItem == itemEl) {
@@ -166,7 +200,7 @@ var runHighlightApp = function() {
 		}
 
 		if (currentActiveItem) {
-			deactiveItem(currentActiveItem);
+			deactivateItem(currentActiveItem);
 		}
 
 		currentActiveItem = itemEl;
@@ -182,7 +216,12 @@ var runHighlightApp = function() {
 		highlightKeywordEl.style.backgroundColor = highlightColor;
 	};
 
-	var deactiveItem = function(itemEl) {
+	/**
+	 * Deactivate a specific keyword
+	 *
+	 * @param itemEl Keyword item to deactivate
+	 */
+	var deactivateItem = function(itemEl) {
 		var highlightColor = itemEl.dataset.highlightColor;
 		var highlightColorEl = itemEl.querySelector('.highlight-color');
 		var highlightKeywordEl = itemEl.querySelector('.highlight-keyword');

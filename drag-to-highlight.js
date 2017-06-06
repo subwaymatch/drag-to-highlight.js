@@ -6,7 +6,7 @@ function DragToHighlight(contentEls, options) {
 	// User-configurable options
 	var highlightableElements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'];
 	var highlightColor = '#fff178';
-	var wrapElName = 'hl-wrap';							// A custom element to wrap each word in paragraphs to detect user click position
+	var wrapElName = 'hl-wrap';								// A custom element to wrap each word in paragraphs to detect user click position
 	var highlightElName = 'hl-highlight';					// Class of highlighted element
 	var highlightableClassName = 'hl-highlightable';		// Custom class to allow highlighting
 
@@ -18,7 +18,6 @@ function DragToHighlight(contentEls, options) {
 	var WrapElement = document.registerElement(wrapElName);
 	var HighlightElement = document.registerElement(highlightElName);
 
-	// TODO: Refactor code to make lib work with all types of children nodes
 	// Paragraph elements
 	var paragraphEls = [];
 
