@@ -91,40 +91,8 @@ a.button {
 	}
 
 
-#pagination {
-	font-family: 'Roboto', sans-serif;
-	width: 100%;
-	position: fixed;
-	left: 0;
-	bottom: 0;
-	background: #fff;
-	padding: 10px;
-	text-align: center;
-}
 
-	ul#list-pagination {
-		display: inline-block;
-	}
 
-	ul#list-pagination li {
-		cursor: pointer;
-		display: inline-block;
-		color: #bbb;
-		padding: 12px 16px;
-		float: left;
-		border: 1px solid #ccc;
-		margin-right: 3px;
-	}
-
-		ul#list-pagination li:hover {
-			color: #ff5544;
-			border-color: #ff5544;
-		}
-
-		ul#list-pagination li.active {
-			color: #444;
-			border: 1px solid #444;
-		}
 
 hl-wrap {
 	cursor: url('images/icons/cursor_highlighter.png'), auto;

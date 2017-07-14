@@ -1,4 +1,4 @@
-function DragToHighlight(contentEls, options) {
+function DragToHighlight(contentSelector, options) {
 
 	const ELEMENT_NODE_TYPE = 1;
 	const TEXT_NODE_TYPE = 3;
@@ -8,6 +8,7 @@ function DragToHighlight(contentEls, options) {
 	// User-configurable options
 	var options = options || {};
 
+	var contentEls;
 	var highlightableElements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'];
 	var highlightColor = '#fff178';
 	var wrapElName = 'hl-wrap';								// A custom element to wrap each word in paragraphs to detect user click position
@@ -30,15 +31,12 @@ function DragToHighlight(contentEls, options) {
 	 * Initialize the highlighter plug-in
 	 */
 	var init = function() {
-		// If a single HTML element has been passed, convert it into an array
-		if (contentEls instanceof Element) {
-			contentEls = [contentEls];
-		}
+		contentEls = document.querySelectorAll(contentSelector);
 
-		contentEls.forEach(function(contentEl, i) {
+		contentEls.forEach(function(contentEl) {
 			var contentChildNodes = contentEl.childNodes;
 
-			contentChildNodes.forEach(function (el, index, childNodes) {
+			contentChildNodes.forEach(function (el) {
 				if ((el.classList != undefined && el.classList.contains(highlightableClassName)) || (highlightableElements.indexOf(el.nodeName.toLowerCase()) > -1)) {
 					paragraphEls.push(el);
 					el.innerHTML = wrapAllWordsInElement(el.innerHTML);
@@ -63,7 +61,7 @@ function DragToHighlight(contentEls, options) {
 	/**
 	 * Wrap all words
 	 *
-	 * @param el Target DOM element
+	 * @param html Target DOM element
 	 */
 	var wrapAllWordsInElement = function(html) {
 		return html.replace(/([^\s-.,;:!?()[\]{}<>"]+)/g, '<' + wrapElName + '>$1</' + wrapElName + '>');
@@ -78,12 +76,12 @@ function DragToHighlight(contentEls, options) {
 	// 1. Get selection
 	// 2. Check whether the user has began and ended the highlight in words, or in whitespaces or other chars (dot, semicolon, etc)
 	// 3. Highlight
-	var handleWindowMouseUp = function(e) {
+	var handleWindowMouseUp = function() {
 		// Get current selection (range to highlight)
 		var selection = window.getSelection ? window.getSelection() : document.selection;
 
 		// If no selection has made, do nothing and return
-		if (selection.toString().trim() == "") {
+		if (selection.toString().trim() === "") {
 			return;
 		}
 
@@ -208,9 +206,6 @@ function DragToHighlight(contentEls, options) {
 	 * @param e Click event
 	 */
 	var handleClick = function(e) {
-		console.log('handleClick()');
-		console.log(e);
-
 		deleteHighlightedElement(e.target);
 	};
 
