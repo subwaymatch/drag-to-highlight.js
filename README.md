@@ -4,7 +4,7 @@ A library to support user highlighting while reading on the browser
 ![Screenshot](http://g.recordit.co/cFQJq5DjsE.gif)
 
 ## Demo
-http://letter.is/
+http://htmlpreview.github.io/?https://github.com/subwaymatch/drag-to-highlight.js/blob/master/index.html
 <br><br>
 ## Basic Usage
 ```javascript
